@@ -15,11 +15,14 @@
 #
 
 require 'axlsx'
+require 'titleize'
 
 rpt = []
 rpt_clean = []
 
-f = File.open(ARGV[0], 'r')
+filename = ARGV[0]
+
+f = File.open(filename, 'r')
 
 # Getting rid of Header Blocks
 skip_header = false
@@ -57,7 +60,7 @@ rpt.each do |line|
   end
 end
 
-puts rpt_clean
+#puts rpt_clean
 
 or_cases = []
 # Get each case
@@ -106,29 +109,63 @@ or_cases.slice!(0)
 # Create the Excel sheet
 p = Axlsx::Package.new
 wb = p.workbook
-
-wb.add_worksheet(:name => "Operative Reprt") do |sheet|
-  sheet.add_row ["MRN", 
-                 "DOS", 
-                 "Age", 
-                 "Sex", 
-                 "Preoperative Diagnosis", 
-                 "Postoperative Diagnosis", 
-                 "Procedure", 
-                 "Pathology", 
-                 "Surgeon", 
-                 "Assistant"]
-  or_cases.each do |or_case|
-    sheet.add_row [or_case[:mrn],
-                   or_case[:date],
-                   or_case[:age],
-                   or_case[:sex],
-                   or_case[:preop],
-                   or_case[:postop],
-                   or_case[:proc],
-                   "",
-                   or_case[:surgeon],
-                   or_case[:assist]]
+wb.styles do |s|
+  # Excel sheet styles
+  header_style = s.add_style :sz => 26,
+                             :alignment => { :horizontal => :center,
+                                             :vertical => :center }
+  subheader_style = s.add_style :sz => 18,
+                                :alignment => { :horizontal => :center,
+                                                :vertical => :center }
+  title_style = s.add_style :sz => 16, 
+                            :b => true,
+                            :alignment => { :horizontal => :left,
+                                            :vertical => :center },
+                            :border => { :style => :thin,
+                                         :color => "000000",
+                                         :edges => [:top] }
+  data_style = s.add_style :sz => 16,
+                           :alignment => { :horizontal => :left,
+                                           :vertical => :top,
+                                           :wrap_text => true },
+                            :border => { :style => :thin, 
+                                         :color => "000000", 
+                                         :edges => [:top, :bottom] }
+  # Excel worksheets
+  wb.add_worksheet(:name => "Operative Reprt") do |sheet|
+    # Headers
+    sheet.add_row ["Richmond University Medical Center", "", "", "", "", "", "", "", "", ""], :style => header_style
+    sheet.merge_cells("A1:J1")
+    sheet.add_row ["Department of Surgery Morbidity and Mortality Conference", "", "", "", "", "", "", "", "", ""], :style => subheader_style
+    sheet.merge_cells("A2:J2")
+    sheet.add_row ["#{or_cases.first[:date]} - #{or_cases.last[:date]}", "", "", "", "", "", "", "", "", ""], :style => subheader_style
+    sheet.merge_cells("A3:J3")
+    sheet.add_row ["", "", "", "", "", "", "", "", "", ""]
+    sheet.merge_cells("A4:J4")
+    sheet.add_row ["MRN", 
+                   "DOS", 
+                   "Age", 
+                   "Sex", 
+                   "Preoperative Diagnosis", 
+                   "Postoperative Diagnosis", 
+                   "Procedure", 
+                   "Pathology", 
+                   "Surgeon", 
+                   "Assistant"], :style => title_style
+    or_cases.each do |or_case|
+      sheet.add_row [or_case[:mrn],
+                     or_case[:date],
+                     or_case[:age],
+                     or_case[:sex],
+                     or_case[:preop].capitalize,
+                     or_case[:postop].capitalize,
+                     or_case[:proc].capitalize,
+                     "",
+                     or_case[:surgeon].titleize,
+                     or_case[:assist].titleize], :style => data_style
+    end
+    sheet.column_widths 14, 13.5, 9.5, 7.5, 43, 34.5, 63, 44, 17.5, 15.5
+    sheet.page_setup.fit_to :width => 1
   end
 end
 
