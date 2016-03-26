@@ -168,7 +168,7 @@ def conartist (input_filename, output_filename)
     end
   end
   
-  p.serialize output_filename
+  p.serialize "#{output_filename}.xlsx"
 end
 
 conartist(ARGV[0], ARGV[1])
